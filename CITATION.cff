@@ -1,0 +1,11 @@
+cff-version: 1.0.0
+message: "If you use this software, please cite it as below."
+authors:
+- family-names: "Attwood"
+  given-names: "Kitty"
+  orcid: "https://orcid.org/0009-0006-1652-947X"
+title: "Heat Low Trends"
+version: 1.0.0
+doi: 10.5281/zenodo.15633855
+date-released: 2025-06-10
+url: "https://github.com/kittyattwood/heat_low_trends"
