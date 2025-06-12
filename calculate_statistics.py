@@ -59,15 +59,13 @@ def mann_kendall_trend(time_series):
 
 # initialize a dictionary to store data for each variable across regions
 data_by_variable = {
-    "avg_LLAT": {},
-    "max_value": {},
     "size": {},
     "frequency": {}
 }
 
-# process each box
+# Process each box
 for box in boxes:
-    
+
     # Read in the data
     df = pd.read_csv(f'{data_dir}/results/{box}_HL_stats.csv')
     df = df.rename(columns={'Unnamed: 0': 'date'})
@@ -80,37 +78,38 @@ for box in boxes:
     df["month"] = pd.to_datetime(df["date"]).dt.month
     
     # Aggregate data by year
-    avg_LLAT = df.groupby("year")["avg_LLAT"].mean()
-    max_value = df.groupby("year")["max_value"].mean()
     size = df.groupby("year")["heat_low_size"].mean()
-    frequency = df.groupby("year").size()  # frequency is the count of rows
+    frequency = df.groupby("year").size()  # Frequency is the count of rows
     
     # Store the anomalies for each variable in the dictionary
-    data_by_variable["avg_LLAT"][box] = avg_LLAT
-    data_by_variable["max_value"][box] = max_value
     data_by_variable["size"][box] = size
     data_by_variable["frequency"][box] = frequency
 
 
-# initialize a dictionary for filtered data
-filtered_data_by_variable = {
-    "avg_LLAT": {},
-    "max_value": {},
-    "size": {},
-    "frequency": {}
-}
-
-# compute trends
 results = {}
+
 for variable in data_by_variable.keys():
     results[variable] = {}
     for box in boxes:
-        series = data_by_variable[variable][box]
-        results[variable][box] = {"Mann-Kendall": mann_kendall_trend(series)}
+        original_series = data_by_variable[variable][box]
+        # Compute trends
+        results[variable][box] = {"Mann-Kendall": mann_kendall_trend(original_series)}
+        # add a column with the percentage increase
+        # set increase from slope
+        slope = results[variable][box]["Mann-Kendall"]["slope"]
+        increase = slope * 45 # 45 years of data
+        # get the baseline mean
+        baseline = original_series[(original_series.index >= 1980) & (original_series.index < 1990)]
+        baseline_mean = baseline.mean()
+        # get the percentage increase
+        percentage_increase = (increase / baseline_mean) * 100
+        # add a column with the baseline mean
+        results[variable][box]["Mann-Kendall"]["baseline mean"] = baseline_mean
+        results[variable][box]["Mann-Kendall"]["45-yr increase"] = increase
+        results[variable][box]["Mann-Kendall"]["percentage increase"] = percentage_increase
 
 # save results to csv
 results_df = pd.DataFrame(results)
-results_df = results_df.stack().apply(pd.Series)
 results_df = results_df.stack().apply(pd.Series)
 results_df = results_df.stack().apply(pd.Series)
 results_df.to_csv(f'{data_dir}/tables/trends_stats_ERA5.csv')
